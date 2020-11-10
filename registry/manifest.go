@@ -11,9 +11,9 @@ import (
 	digest "github.com/opencontainers/go-digest"
 )
 
-func (registry *Registry) Manifest(repository, reference string) (*schema1.SignedManifest, error) {
-	url := registry.url("/v2/%s/manifests/%s", repository, reference)
-	registry.Logf("registry.manifest.get url=%s repository=%s reference=%s", url, repository, reference)
+func (r *Registry) Manifest(repository, reference string) (*schema1.SignedManifest, error) {
+	url := r.generateUrl("/v2/%s/manifests/%s", repository, reference)
+	r.logf("registry.manifest.get url=%s repository=%s reference=%s", url, repository, reference)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -21,7 +21,7 @@ func (registry *Registry) Manifest(repository, reference string) (*schema1.Signe
 	}
 
 	req.Header.Set("Accept", schema1.MediaTypeManifest)
-	resp, err := registry.Client.Do(req)
+	resp, err := r.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -41,9 +41,9 @@ func (registry *Registry) Manifest(repository, reference string) (*schema1.Signe
 	return signedManifest, nil
 }
 
-func (registry *Registry) ManifestV2(repository, reference string) (*schema2.DeserializedManifest, error) {
-	url := registry.url("/v2/%s/manifests/%s", repository, reference)
-	registry.Logf("registry.manifest.get url=%s repository=%s reference=%s", url, repository, reference)
+func (r *Registry) ManifestV2(repository, reference string) (*schema2.DeserializedManifest, error) {
+	url := r.generateUrl("/v2/%s/manifests/%s", repository, reference)
+	r.logf("registry.manifest.get url=%s repository=%s reference=%s", url, repository, reference)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -51,7 +51,7 @@ func (registry *Registry) ManifestV2(repository, reference string) (*schema2.Des
 	}
 
 	req.Header.Set("Accept", schema2.MediaTypeManifest)
-	resp, err := registry.Client.Do(req)
+	resp, err := r.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -70,11 +70,11 @@ func (registry *Registry) ManifestV2(repository, reference string) (*schema2.Des
 	return deserialized, nil
 }
 
-func (registry *Registry) ManifestDigest(repository, reference string) (digest.Digest, error) {
-	url := registry.url("/v2/%s/manifests/%s", repository, reference)
-	registry.Logf("registry.manifest.head url=%s repository=%s reference=%s", url, repository, reference)
+func (r *Registry) ManifestDigest(repository, reference string) (digest.Digest, error) {
+	url := r.generateUrl("/v2/%s/manifests/%s", repository, reference)
+	r.logf("registry.manifest.head url=%s repository=%s reference=%s", url, repository, reference)
 
-	resp, err := registry.Client.Head(url)
+	resp, err := r.client.Head(url)
 	if resp != nil {
 		defer resp.Body.Close()
 	}
@@ -84,15 +84,15 @@ func (registry *Registry) ManifestDigest(repository, reference string) (digest.D
 	return digest.Parse(resp.Header.Get("Docker-Content-Digest"))
 }
 
-func (registry *Registry) DeleteManifest(repository string, digest digest.Digest) error {
-	url := registry.url("/v2/%s/manifests/%s", repository, digest)
-	registry.Logf("registry.manifest.delete url=%s repository=%s reference=%s", url, repository, digest)
+func (r *Registry) DeleteManifest(repository string, digest digest.Digest) error {
+	url := r.generateUrl("/v2/%s/manifests/%s", repository, digest)
+	r.logf("registry.manifest.delete url=%s repository=%s reference=%s", url, repository, digest)
 
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
 		return err
 	}
-	resp, err := registry.Client.Do(req)
+	resp, err := r.client.Do(req)
 	if resp != nil {
 		defer resp.Body.Close()
 	}
@@ -102,9 +102,9 @@ func (registry *Registry) DeleteManifest(repository string, digest digest.Digest
 	return nil
 }
 
-func (registry *Registry) PutManifest(repository, reference string, manifest distribution.Manifest) error {
-	url := registry.url("/v2/%s/manifests/%s", repository, reference)
-	registry.Logf("registry.manifest.put url=%s repository=%s reference=%s", url, repository, reference)
+func (r *Registry) PutManifest(repository, reference string, manifest distribution.Manifest) error {
+	url := r.generateUrl("/v2/%s/manifests/%s", repository, reference)
+	r.logf("registry.manifest.put url=%s repository=%s reference=%s", url, repository, reference)
 
 	mediaType, payload, err := manifest.Payload()
 	if err != nil {
@@ -118,7 +118,7 @@ func (registry *Registry) PutManifest(repository, reference string, manifest dis
 	}
 
 	req.Header.Set("Content-Type", mediaType)
-	resp, err := registry.Client.Do(req)
+	resp, err := r.client.Do(req)
 	if resp != nil {
 		defer resp.Body.Close()
 	}
